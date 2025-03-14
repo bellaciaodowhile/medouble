@@ -31,7 +31,6 @@ try {
 		const { data, error } = await supabase
 		.from('medidata')
 		.select()
-		console.log(data)
 		if (error) return console.log(error)
 		localStorage.setItem('DATA_EXCEL', JSON.stringify(data[0].data));
 	})();
