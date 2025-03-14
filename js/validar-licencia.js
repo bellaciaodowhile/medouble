@@ -1,4 +1,3 @@
-
 /*
 	Datos para consultar: 
 	+ RUT Paciente
@@ -21,34 +20,36 @@
 
 // Data EXCEL
 
-const PATH_FILE_EXCEL = '../docs/PLANTILLA.xlsx';
-fetch(PATH_FILE_EXCEL)
-.then(response => {
-	if (!response.ok) {
-		throw new Error('Network response was not ok');
-	}
-	return response.arrayBuffer();
-})
-.then(data => {
-	const workbook = XLSX.read(data, { type: "array" });
-	workbook.SheetNames.forEach(sheet => {
-		const rowObject = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheet]);
-		const jsonObject = JSON.stringify(rowObject);
-		const data = JSON.parse(jsonObject)
-		localStorage.setItem('DATA_EXCEL', JSON.stringify(data))
-	});
-})
-.catch(error => {
-	console.error('Error loading the Excel file:', error);
-});
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl = 'https://aenlcrtjqgnxwzynorto.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbmxjcnRqcWdueHd6eW5vcnRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5NTcyOTEsImV4cCI6MjA1NzUzMzI5MX0.cIFQtbPfoXvagGfW9fdg4qV_-UxvLB9luLhXqt1aFVs';
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+try {
+	(async () => {
+		const { data, error } = await supabase
+		.from('medidata')
+		.select()
+		if (error) return console.log(error)
+		localStorage.setItem('DATA_EXCEL', JSON.stringify(data[0].data));
+	})();
+} catch (error) {
+	console.log(`Error: ${error}`)
+}
+
 
 const sectionTwo = document.querySelector('.section-two'); 
 
+const btnConsult = document.querySelector('.btn-consult');
+btnConsult.addEventListener('click', consult);
+
 function consult() {
-	const data = JSON.parse(localStorage.getItem('DATA_EXCEL')) || [];
+	const dataString = JSON.parse(localStorage.getItem('DATA_EXCEL'), null, 2) || [];
 	const RUT = document.querySelector('input[name="txt_rut"]');
 	const FOLIO = document.querySelector('input[name="txt_folio"]');
 	const CODE = document.querySelector('input[name="txt_cod"]');
+	const data = JSON.parse(dataString)
 
 	if (RUT.value == '' || FOLIO.value == '' || CODE.value == '') {
 		return alert('Se requiere llenar todos los campos.')
@@ -65,7 +66,6 @@ function consult() {
 		}
 
 		sectionTwo.style.display = 'block';
-		console.log(patient)
 
 		const rutPatient = document.querySelector('.rut-patient');
 		const fullName = document.querySelector('.fullname');
@@ -92,46 +92,16 @@ function consult() {
 		if (patient[0]?.ListadoDeTramitaciones) {
 			const lists = JSON.parse(patient[0].ListadoDeTramitaciones);
 			const tbody = document.querySelector('.tbody');
-			const keys = ["date", "status", "doctor", "observation"];
-
-
-			const test = []
-
-			lists.forEach(item => {
-				console.log(item); // Log the current item to the console
-
-				// Convert the inner array to an object
-				const obj = {
-					[keys[0]]: item[0], // date
-					[keys[1]]: item[1], // status
-					[keys[2]]: item[2], // doctor
-					[keys[3]]: item[3]  // observation
-				};
-				test.push(obj)
-
-				console.log(obj); // Log the created object
-
-				// Now you can use the object to populate the table
-				
-			});
 			tbody.innerHTML = '';
-			test.map(obj => {
-				tbody.innerHTML += `<tr>`;
-				tbody.innerHTML += `<td>${obj.date}</td>`;
-				tbody.innerHTML += `<td>${obj.status}</td>`;
-				tbody.innerHTML += `<td>${obj.doctor}</td>`;
-				tbody.innerHTML += `<td>${obj.observation}</td>`;
-				tbody.innerHTML += `</tr>`;
+			lists.forEach((item, index) => {
+				tbody.innerHTML += `<tr class="row-${index}"></tr>`;
+			});
+			lists.map((item, index) => {
+				const row = document.querySelector(`.row-${index}`);
+				item.map((value) => {
+					row.innerHTML += `<td>${value}</td>`;
+				})
 			})
-
-			// console.log(lists)
-
-			// tbody.innerHTML += `<tr>`; 
-			// 	item.forEach((x, index) => { 
-			// 		console.log(index)
-			// 		tbody.innerHTML += `<td>${index}</td>`;
-			// 	});
-			// 	tbody.innerHTML += `</tr>`;
 		}
 
 	} else {
