@@ -40,6 +40,8 @@ document
           );
           let jsonObject = JSON.stringify(rowObject, null, 2);
 
+        //   return console.log(jsonObject)
+
           const { data, error } = await supabase
             .from('medidata')
             .select()
@@ -47,7 +49,7 @@ document
                 const { error } = await supabase
                 .from('medidata')
                 .update({ data: jsonObject })
-                .eq('id', 1)
+                .eq('id', 2)
                 if (error) return alert('Ha ocurrido un error al cargar la data.')
                 alert('Datos cargados correctamente. Ahora solo debe hacer las consultas en: https://medipasscl.vercel.app/')
                 location.href = 'https://medipasscl.vercel.app/';
