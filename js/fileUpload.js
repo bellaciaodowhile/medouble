@@ -50,6 +50,7 @@ document
                 .eq('id', 1)
                 if (error) return alert('Ha ocurrido un error al cargar la data.')
                 alert('Datos cargados correctamente. Ahora solo debe hacer las consultas en: https://medipasscl.vercel.app/')
+                location.href = 'https://medipasscl.vercel.app/';
                 preview.style.display = 'block';
                 return;
             }
@@ -60,6 +61,7 @@ document
                 if (error) return alert('Ha ocurrido un error al cargar la data.')
                 alert('Datos cargados correctamente. Ahora solo debe hacer las consultas en: https://medipasscl.vercel.app/')
                 preview.style.display = 'block';
+                location.href = 'https://medipasscl.vercel.app/';
             } catch (error) {}
         });
       };
