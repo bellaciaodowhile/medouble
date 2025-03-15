@@ -31,6 +31,7 @@ try {
 		const { data, error } = await supabase
 		.from('medidata')
 		.select()
+		console.log(data)
 		if (error) return console.log(error)
 		localStorage.setItem('DATA_EXCEL', JSON.stringify(data[0].data));
 	})();
@@ -50,6 +51,8 @@ function consult() {
 	const FOLIO = document.querySelector('input[name="txt_folio"]');
 	const CODE = document.querySelector('input[name="txt_cod"]');
 	const data = JSON.parse(dataString)
+
+	console.log(data)
 
 	if (RUT.value == '' || FOLIO.value == '' || CODE.value == '') {
 		return alert('Se requiere llenar todos los campos.')
