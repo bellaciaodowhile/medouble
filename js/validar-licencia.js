@@ -57,7 +57,7 @@ function consult() {
 
 	if (data.length > 0) {
 		const patient = data.filter((item) =>{
-			if (item.RutPaciente == RUT.value.trim() && item.Folio == FOLIO.value.trim() && item.CodigoVerificacion == CODE.value.trim()) {
+			if (item.RutPaciente.trim() == RUT.value.trim() && item.Folio.trim() == FOLIO.value.trim() && item.CodigoVerificacion.trim() == CODE.value.trim()) {
 				return item;
 			} 
 		});
