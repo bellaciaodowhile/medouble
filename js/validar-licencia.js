@@ -5,7 +5,7 @@
 	+ CodigoDeVerificacion
 
 	Datos que mostrará:
-	+ CodigoDeVerificacion
+	- CodigoDeVerificacion
 	- RutPaciente
 	- Nombre completo
 	- FolioLicenciaMedica
