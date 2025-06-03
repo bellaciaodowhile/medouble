@@ -19,95 +19,106 @@
 */ 
 
 // Data EXCEL
-
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-const supabaseUrl = 'https://aenlcrtjqgnxwzynorto.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbmxjcnRqcWdueHd6eW5vcnRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5NTcyOTEsImV4cCI6MjA1NzUzMzI5MX0.cIFQtbPfoXvagGfW9fdg4qV_-UxvLB9luLhXqt1aFVs';
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-try {
-	(async () => {
-		const { data, error } = await supabase
-		.from('medidata')
-		.select()
-		console.log(data)
-		if (error) return console.log(error)
-		localStorage.setItem('DATA_EXCEL', JSON.stringify(data[0].data));
-	})();
-} catch (error) {
-	console.log(`Error: ${error}`)
-}
-
-
 const sectionTwo = document.querySelector('.section-two'); 
 
 const btnConsult = document.querySelector('.btn-consult');
-btnConsult.addEventListener('click', consult);
+btnConsult.addEventListener('click', consultarLicencia);
 
-function consult() {
-	const dataString = JSON.parse(localStorage.getItem('DATA_EXCEL'), null, 2) || [];
-	const RUT = document.querySelector('input[name="txt_rut"]');
-	const FOLIO = document.querySelector('input[name="txt_folio"]');
-	const CODE = document.querySelector('input[name="txt_cod"]');
-	const data = JSON.parse(dataString)
+async function consultarLicencia() {
+	return alert('Consultando licencia... No traerá más datos, solo es prueba.')
+	try {
+		const RUT = document.querySelector('input[name="txt_rut"]');
+		const FOLIO = document.querySelector('input[name="txt_folio"]');
+		const CODE = document.querySelector('input[name="txt_cod"]');
 
-	console.log(data)
-
-	if (RUT.value == '' || FOLIO.value == '' || CODE.value == '') {
-		return alert('Se requiere llenar todos los campos.')
-	}
-
-	if (data.length > 0) {
-		const patient = data.filter((item) =>{
-			if (item.RutPaciente.trim() == RUT.value.trim() && item.Folio.trim() == FOLIO.value.trim() && item.CodigoVerificacion.trim() == CODE.value.trim()) {
-				return item;
-			} 
-		});
-		if (patient.length == 0) {
-			return alert('No se encuentra el registro.')
+		// Validar campos
+		if (!RUT.value || !FOLIO.value || !CODE.value) {
+			alert('Todos los campos son requeridos');
+			return;
 		}
 
-		sectionTwo.style.display = 'block';
+		// Ocultar resultados anteriores
+		sectionTwo.style.display = 'none';
 
-		const rutPatient = document.querySelector('.rut-patient');
-		const fullName = document.querySelector('.fullname');
-		const folio = document.querySelector('.folio');
-		const placeOfGranting = document.querySelector('.place-of-granting');
-		const dateOfGranting = document.querySelector('.date-of-granting');
-		const instSalud = document.querySelector('.inst-salud');
-		const fullNameMedic = document.querySelector('.medic-fullname');
-		const rutEmp = document.querySelector('.rut-emp');
-		const social = document.querySelector('.social');
-		const linkPdf = document.querySelector('.section-two--document');
+		// Preparar datos
+		const datos = {
+			rut_paciente: RUT.value.trim(),
+			folio_licencia: FOLIO.value.trim(),
+			codigo_verificacion: CODE.value.trim()
+		};
 
-		rutPatient.textContent = patient[0]?.RutPaciente;
-		fullName.textContent = patient[0]?.NombreCompleto;
-		folio.textConten = patient[0]?.Folio;
-		placeOfGranting.textContent = patient[0]?.LugarOtorgamiento;
-		dateOfGranting.textContent = patient[0]?.FechaOtorgamiento;
-		instSalud.textContent = patient[0]?.InstSaludPrevisional;
-		fullNameMedic.textContent = patient[0]?.NombreMedico;
-		rutEmp.textContent = patient[0]?.RutEmpleador;
-		social.textContent = patient[0]?.RazonSocial;
-		linkPdf.href = patient[0]?.LinkPdf;
+		console.log('Enviando datos:', datos);
 
-		if (patient[0]?.ListadoDeTramitaciones) {
-			const lists = JSON.parse(patient[0].ListadoDeTramitaciones);
+		try {
+			// Realizar la consulta
+			const response = await fetch('./api/validar_licencia.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(datos)
+			});
+
+			let data;
+			const contentType = response.headers.get("content-type");
+			if (contentType && contentType.includes("application/json")) {
+				data = await response.json();
+			} else {
+				// Si no es JSON, leer como texto para debugging
+				const text = await response.text();
+				console.error('Respuesta no JSON:', text);
+				throw new Error('La respuesta del servidor no es JSON válido');
+			}
+
+			console.log('Respuesta del servidor:', data);
+
+			if (!data.success) {
+				throw new Error(data.message || 'Error al consultar la licencia');
+			}
+
+			const licencia = data.data;
+			console.log('Datos de licencia:', licencia);
+
+			// Mostrar sección de resultados
+			sectionTwo.style.display = 'block';
+
+			// Actualizar datos básicos
+			document.querySelector('.rut-patient').textContent = licencia.rut_paciente || 'N/A';
+			document.querySelector('.fullname').textContent = licencia.nombre_completo || 'N/A';
+			document.querySelector('.folio').textContent = licencia.folio_licencia || 'N/A';
+			document.querySelector('.place-of-granting').textContent = licencia.lugar_otorgamiento || 'N/A';
+			document.querySelector('.date-of-granting').textContent = licencia.fecha_otorgamiento || 'N/A';
+			document.querySelector('.inst-salud').textContent = licencia.inst_salud_previsional || 'N/A';
+			document.querySelector('.medic-fullname').textContent = licencia.nombre_medico || 'N/A';
+			document.querySelector('.rut-emp').textContent = licencia.rut_empleador || 'N/A';
+			document.querySelector('.social').textContent = licencia.razon_social || 'N/A';
+
+			// Actualizar tabla de tramitaciones
 			const tbody = document.querySelector('.tbody');
 			tbody.innerHTML = '';
-			lists.forEach((item, index) => {
-				tbody.innerHTML += `<tr class="row-${index}"></tr>`;
-			});
-			lists.map((item, index) => {
-				const row = document.querySelector(`.row-${index}`);
-				item.map((value) => {
-					row.innerHTML += `<td>${value}</td>`;
-				})
-			})
+
+			if (licencia.tramitaciones && licencia.tramitaciones.length > 0) {
+				licencia.tramitaciones.forEach(tramite => {
+					tbody.innerHTML += `
+						<tr>
+							<td>${tramite.fecha || 'N/A'}</td>
+							<td>${tramite.estado || 'N/A'}</td>
+							<td>${tramite.entidad || 'N/A'}</td>
+						</tr>
+					`;
+				});
+			} else {
+				tbody.innerHTML = '<tr><td colspan="3" class="text-center">No hay tramitaciones registradas</td></tr>';
+			}
+
+		} catch (fetchError) {
+			console.error('Error en la petición:', fetchError);
+			throw new Error('Error de comunicación con el servidor: ' + fetchError.message);
 		}
 
-	} else {
-		alert('No existen datos registrados. Cunsulte su proveedor')
+	} catch (error) {
+		console.error('Error:', error);
+		alert(error.message || 'Error al consultar la licencia');
+		sectionTwo.style.display = 'none';
 	}
 }

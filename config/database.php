@@ -18,7 +18,7 @@ if ($conn->query($sql) === TRUE) {
     die("Error creating database: " . $conn->error);
 }
 
-// Create table if not exists
+// Create licencias_medicas table if not exists
 $sql = "CREATE TABLE IF NOT EXISTS licencias_medicas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo_verificacion VARCHAR(50) NOT NULL,
@@ -31,12 +31,26 @@ $sql = "CREATE TABLE IF NOT EXISTS licencias_medicas (
     nombre_medico VARCHAR(100) NOT NULL,
     rut_empleador VARCHAR(20) NOT NULL,
     razon_social VARCHAR(100) NOT NULL,
-    estado_tramitacion VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 
 if (!$conn->query($sql)) {
-    die("Error creating table: " . $conn->error);
+    die("Error creating licencias_medicas table: " . $conn->error);
+}
+
+// Create tramitaciones table if not exists
+$sql = "CREATE TABLE IF NOT EXISTS tramitaciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    licencia_id INT NOT NULL,
+    fecha DATE NOT NULL,
+    estado VARCHAR(50) NOT NULL,
+    entidad VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (licencia_id) REFERENCES licencias_medicas(id) ON DELETE CASCADE
+)";
+
+if (!$conn->query($sql)) {
+    die("Error creating tramitaciones table: " . $conn->error);
 }
 
 return $conn; 

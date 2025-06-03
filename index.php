@@ -193,7 +193,7 @@
 			<div class="row">
 				<div class="col-sm-12" style="text-align: center;">
 					<p>+56 2 2588 86 29</p>
-					<a href="mailto:soporte@medipass.cl">soporte@medipass.cl</a>
+					<a href="mailto:soporte@medipass.as">soporte@medipass.cl</a>
 				</div>
 			</div>
 		</div>
@@ -264,7 +264,7 @@
 				<tbody class="tbody"></tbody>
 			</table>
 
-			<div class="text-normal">Si usted desa ver o imprimir una copia de la licencia médica electrónica (LME), presione el siguiente link, <a href="#">*Ver licencia electrónica*</a>Aquí podrá ver los últimos datos registrados en ella. Esta copia no será válida para realizar trámites.</div>
+			<div class="text-normal">Si usted desea ver o imprimir una copia de la licencia médica electrónica (LME), presione el siguiente link, <a href="#">*Ver licencia electrónica*</a>Aquí podrá ver los últimos datos registrados en ella. Esta copia no será válida para realizar trámites.</div>
 		</div>
 
 	</div>

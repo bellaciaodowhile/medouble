@@ -31,6 +31,33 @@ $licencias = $licencia->read();
             transform: scale(1);
             opacity: 1;
         }
+        .tramitacion-content {
+            visibility: hidden;
+            background-color: #f9fafb;
+        }
+        .tramitacion-content > td {
+            padding: 0;
+        }
+        .tramitacion-content > td > div {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.3s ease-out;
+        }
+        .tramitacion-content.expanded {
+            visibility: visible;
+        }
+        .tramitacion-content.expanded > td > div {
+            max-height: 500px;
+            opacity: 1;
+            padding: 1rem;
+        }
+        .rotate-icon {
+            transition: transform 0.3s ease;
+        }
+        .rotate-icon.expanded {
+            transform: rotate(180deg);
+        }
         @media (max-width: 640px) {
             .table-container {
                 margin: -1rem;
@@ -85,7 +112,7 @@ $licencias = $licencia->read();
 
             <!-- Licenses Table -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="table-container overflow-x-auto">
+                <div class="table-container overflow-x-auto overflow-hidden">
                     <table class="min-w-full responsive-table">
                         <thead class="bg-gray-50">
                             <tr>
@@ -94,7 +121,7 @@ $licencias = $licencia->read();
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Folio</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Tramitación</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
@@ -107,13 +134,25 @@ $licencias = $licencia->read();
                                 <td class="px-6 py-4" data-label="Folio"><?php echo htmlspecialchars($lic['folio_licencia']); ?></td>
                                 <td class="px-6 py-4" data-label="Fecha"><?php echo htmlspecialchars($lic['fecha_otorgamiento']); ?></td>
                                 <td class="px-6 py-4" data-label="Estado">
+                                    <?php 
+                                    $tramitaciones = $lic['tramitaciones'];
+                                    $ultima_tramitacion = end($tramitaciones);
+                                    if ($ultima_tramitacion): 
+                                    ?>
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        <?php echo $lic['estado_tramitacion'] === 'Aprobada' ? 'bg-green-100 text-green-800' : 
-                                        ($lic['estado_tramitacion'] === 'Rechazada' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'); ?>">
-                                        <?php echo htmlspecialchars($lic['estado_tramitacion']); ?>
+                                        <?php echo $ultima_tramitacion['estado'] === 'Aprobada' ? 'bg-green-100 text-green-800' : 
+                                        ($ultima_tramitacion['estado'] === 'Rechazada' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'); ?>">
+                                        <?php echo htmlspecialchars($ultima_tramitacion['estado']); ?>
                                     </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 text-sm space-x-2" data-label="Acciones">
+                                    <button onclick="toggleTramitaciones(<?php echo $lic['id']; ?>)" 
+                                            class="text-gray-600 hover:text-gray-900 transition-colors duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline rotate-icon" id="icon-<?php echo $lic['id']; ?>" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
                                     <button onclick="editLicencia(<?php echo $lic['id']; ?>)" 
                                             class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
@@ -127,6 +166,55 @@ $licencias = $licencia->read();
                                             <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                         </svg>
                                     </button>
+                                </td>
+                            </tr>
+                            <tr class="tramitacion-content" id="tramitaciones-<?php echo $lic['id']; ?>">
+                                <td colspan="7">
+                                    <div class="transition-all duration-300">
+                                        <script>
+                                            console.log(<?php echo json_encode($lic['tramitaciones']); ?>);
+                                        </script>
+                                        <?php 
+                                        $tramitaciones = $lic['tramitaciones'];
+                                        if (!empty($tramitaciones)): 
+                                        ?>
+                                            <div class="space-y-4 p-4">
+                                                <h4 class="font-semibold text-gray-900 mb-3">Historial de Tramitaciones</h4>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    <?php 
+                                                    foreach ($tramitaciones as $tramitacion): 
+                                                        if (!empty($tramitacion['fecha'])):
+                                                    ?>
+                                                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                                                            <div class="flex justify-between items-start mb-2">
+                                                                <div class="text-sm font-medium text-gray-900">
+                                                                    <?php echo date('d/m/Y', strtotime($tramitacion['fecha'])); ?>
+                                                                </div>
+                                                                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                                                    <?php echo $tramitacion['estado'] === 'Aprobada' ? 'bg-green-100 text-green-800' : 
+                                                                    ($tramitacion['estado'] === 'Rechazada' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'); ?>">
+                                                                    <?php echo htmlspecialchars($tramitacion['estado']); ?>
+                                                                </span>
+                                                            </div>
+                                                            <div class="text-sm text-gray-600">
+                                                                <div class="mb-1">
+                                                                    <span class="font-medium">Entidad:</span> 
+                                                                    <?php echo htmlspecialchars($tramitacion['entidad']); ?>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    <?php 
+                                                        endif;
+                                                    endforeach; 
+                                                    ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="text-center text-gray-500 py-4">
+                                                No hay tramitaciones registradas para esta licencia
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -182,7 +270,7 @@ $licencias = $licencia->read();
                         </div>
                         <div class="form-group">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Institución de Salud</label>
-                            <input type="text" id="inst_salud_previsional" name="inst_salud_previsional" 
+                            <input type="text" id="inst_salud_previsional" name="inst_salud_previsional"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1DA9A3] focus:border-transparent transition-all duration-200">
                         </div>
                         <div class="form-group">
@@ -210,6 +298,24 @@ $licencias = $licencia->read();
                             </select>
                         </div>
                     </div>
+
+                    <!-- Sección de Tramitaciones -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-lg font-semibold text-gray-900">Tramitaciones</h4>
+                            <button type="button" onclick="agregarTramitacion()" 
+                                    class="px-3 py-1 bg-[#1DA9A3] text-white rounded-md hover:bg-[#178F89] transition-all duration-200 transform hover:scale-105 flex items-center space-x-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Agregar Tramitación</span>
+                            </button>
+                        </div>
+                        <div id="tramitacionesContainer" class="space-y-4">
+                            <!-- Las tramitaciones se agregarán aquí dinámicamente -->
+                        </div>
+                    </div>
+
                     <div class="flex justify-end space-x-3 pt-4 border-t">
                         <button type="button" onclick="closeModal()" 
                                 class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-all duration-200 transform hover:scale-105">
@@ -226,17 +332,90 @@ $licencias = $licencia->read();
     </div>
 
     <script>
+        let tramitacionCounter = 0;
+
+        function toggleTramitaciones(id) {
+            const content = document.getElementById(`tramitaciones-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            
+            // Asegurarse de que la fila sea visible antes de animar
+            if (!content.classList.contains('expanded')) {
+                content.style.display = 'table-row';
+                // Forzar un reflow para que la animación funcione
+                void content.offsetHeight;
+            }
+            
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+            
+            // Si se está contrayendo, esperar a que termine la animación antes de ocultar
+            if (!content.classList.contains('expanded')) {
+                setTimeout(() => {
+                    if (!content.classList.contains('expanded')) {
+                        content.style.display = 'none';
+                    }
+                }, 300); // Este tiempo debe coincidir con la duración de la transición en CSS
+            }
+        }
+
+        function agregarTramitacion(data = null) {
+            const container = document.getElementById('tramitacionesContainer');
+            const tramitacionId = tramitacionCounter++;
+            
+            const tramitacionHTML = `
+                <div class="tramitacion-item bg-gray-50 p-4 rounded-lg relative" id="tramitacion-${tramitacionId}">
+                    <button type="button" onclick="eliminarTramitacion(${tramitacionId})" 
+                            class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="form-group">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+                            <input type="date" name="tramitaciones[${tramitacionId}][fecha]" 
+                                   value="${data ? data.fecha : ''}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1DA9A3] focus:border-transparent transition-all duration-200">
+                        </div>
+                        <div class="form-group">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                            <select name="tramitaciones[${tramitacionId}][estado]" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1DA9A3] focus:border-transparent transition-all duration-200">
+                                <option value="En Trámite" ${data && data.estado === 'En Trámite' ? 'selected' : ''}>En Trámite</option>
+                                <option value="Aprobada" ${data && data.estado === 'Aprobada' ? 'selected' : ''}>Aprobada</option>
+                                <option value="Rechazada" ${data && data.estado === 'Rechazada' ? 'selected' : ''}>Rechazada</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Entidad</label>
+                            <input type="text" name="tramitaciones[${tramitacionId}][entidad]" 
+                                   value="${data ? data.entidad : ''}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1DA9A3] focus:border-transparent transition-all duration-200">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', tramitacionHTML);
+        }
+
+        function eliminarTramitacion(id) {
+            const tramitacion = document.getElementById(`tramitacion-${id}`);
+            tramitacion.remove();
+        }
+
         function openModal(edit = false) {
             const modal = document.getElementById('licenciaModal');
             const modalContainer = modal.querySelector('.modal-container');
             modal.classList.remove('hidden');
-            // Trigger reflow
             void modal.offsetWidth;
             modal.classList.add('active');
             modalContainer.classList.add('active');
             document.getElementById('modalTitle').textContent = `${edit ? 'Editar' : 'Nueva'} Licencia Médica`;
             if (!edit) {
                 document.getElementById('licenciaForm').reset();
+                document.getElementById('tramitacionesContainer').innerHTML = '';
+                agregarTramitacion();
             }
         }
 
@@ -259,21 +438,17 @@ $licencias = $licencia->read();
                         return;
                     }
                     
-                    // Si data es un array, tomar el primer elemento
                     const licencia = Array.isArray(data) ? data[0] : data;
-                    console.log(licencia);
-
-                    console.log({
-                        field: document.getElementById('codigo_verificacion'),
-                        value: licencia.codigo_verificacion
-                    })
-
+                    
                     if (!licencia) {
                         alert('No se encontró la licencia');
                         return;
                     }
-                    
 
+                    // Limpiar tramitaciones existentes
+                    document.getElementById('tramitacionesContainer').innerHTML = '';
+
+                    // Llenar campos de la licencia
                     document.getElementById('licenciaId').value = licencia.id;
                     document.getElementById('codigo_verificacion').value = licencia.codigo_verificacion;
                     document.getElementById('rut_paciente').value = licencia.rut_paciente;
@@ -285,7 +460,16 @@ $licencias = $licencia->read();
                     document.getElementById('nombre_medico').value = licencia.nombre_medico;
                     document.getElementById('rut_empleador').value = licencia.rut_empleador;
                     document.getElementById('razon_social').value = licencia.razon_social;
-                    document.getElementById('estado_tramitacion').value = licencia.estado_tramitacion;
+
+                    // Agregar tramitaciones existentes
+                    if (licencia.tramitaciones && licencia.tramitaciones.length > 0) {
+                        licencia.tramitaciones.forEach(tramitacion => {
+                            agregarTramitacion(tramitacion);
+                        });
+                    } else {
+                        agregarTramitacion();
+                    }
+
                     openModal(true);
                 })
                 .catch(error => {
@@ -314,7 +498,27 @@ $licencias = $licencia->read();
             e.preventDefault();
             const formData = new FormData(this);
             const id = document.getElementById('licenciaId').value;
-            const data = Object.fromEntries(formData);
+            
+            // Convertir FormData a objeto y reorganizar tramitaciones
+            const data = {};
+            formData.forEach((value, key) => {
+                if (key.startsWith('tramitaciones[')) {
+                    const matches = key.match(/tramitaciones\[(\d+)\]\[(\w+)\]/);
+                    if (matches) {
+                        const [, index, field] = matches;
+                        if (!data.tramitaciones) data.tramitaciones = [];
+                        if (!data.tramitaciones[index]) data.tramitaciones[index] = {};
+                        data.tramitaciones[index][field] = value;
+                    }
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            // Convertir tramitaciones de objeto a array
+            if (data.tramitaciones) {
+                data.tramitaciones = Object.values(data.tramitaciones);
+            }
             
             fetch('../api/licencias.php', {
                 method: id ? 'PUT' : 'POST',

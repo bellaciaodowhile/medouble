@@ -39,7 +39,7 @@ switch ($method) {
             http_response_code(201);
             echo json_encode(['success' => true]);
         } else {
-            http_response_code(400);
+            http_response_code(500);
             echo json_encode(['error' => 'Error al crear la licencia']);
         }
         break;
@@ -55,7 +55,7 @@ switch ($method) {
         if ($licencia->update($id, $input)) {
             echo json_encode(['success' => true]);
         } else {
-            http_response_code(400);
+            http_response_code(500);
             echo json_encode(['error' => 'Error al actualizar la licencia']);
         }
         break;
@@ -71,7 +71,7 @@ switch ($method) {
         if ($licencia->delete($id)) {
             echo json_encode(['success' => true]);
         } else {
-            http_response_code(400);
+            http_response_code(500);
             echo json_encode(['error' => 'Error al eliminar la licencia']);
         }
         break;
