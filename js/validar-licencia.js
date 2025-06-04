@@ -25,7 +25,6 @@ const btnConsult = document.querySelector('.btn-consult');
 btnConsult.addEventListener('click', consultarLicencia);
 
 async function consultarLicencia() {
-	return alert('Consultando licencia... No traerá más datos, solo es prueba.')
 	try {
 		const RUT = document.querySelector('input[name="txt_rut"]');
 		const FOLIO = document.querySelector('input[name="txt_folio"]');
@@ -58,6 +57,8 @@ async function consultarLicencia() {
 				},
 				body: JSON.stringify(datos)
 			});
+
+			console.log('Respuesta de la consulta:', response);
 
 			let data;
 			const contentType = response.headers.get("content-type");

@@ -2,7 +2,18 @@
 require_once '../config/database.php';
 require_once '../includes/crud.php';
 
-$licencia = new LicenciaMedica($conn);
+// Crear instancia de la base de datos y obtener conexión
+$database = new Database();
+if (!$database->createDatabaseIfNotExists()) {
+    die("Error al inicializar la base de datos");
+}
+
+$db = $database->getConnection();
+if (!$db) {
+    die("Error de conexión a la base de datos");
+}
+
+$licencia = new LicenciaMedica($db);
 $licencias = $licencia->read();
 ?>
 <!DOCTYPE html>
