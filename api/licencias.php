@@ -4,80 +4,145 @@ require_once '../includes/crud.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Access-Control-Allow-Methods: GET, POST, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
-$licencia = new LicenciaMedica($conn);
+function sendJsonResponse($success, $data = null, $message = '') {
+    echo json_encode([
+        'success' => $success,
+        'data' => $data,
+        'message' => $message
+    ]);
+    exit;
+}
 
-// Get the HTTP method
-$method = $_SERVER['REQUEST_METHOD'];
+try {
+    $database = new Database();
+    if (!$database->createDatabaseIfNotExists()) {
+        throw new Exception('Error al inicializar la base de datos');
+    }
+    
+    $db = $database->getConnection();
+    if (!$db) {
+        throw new Exception('Error de conexión a la base de datos');
+    }
 
-// Get JSON data for POST and PUT requests
-$input = json_decode(file_get_contents('php://input'), true);
+    $licencia = new LicenciaMedica($db);
 
-switch ($method) {
-    case 'GET':
-        // Read single license or all licenses
+    // GET - Obtener licencia(s)
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
         $result = $licencia->read($id);
-        
-        if ($id) {
-            if (empty($result)) {
-                http_response_code(404);
-                echo json_encode(['error' => 'Licencia no encontrada']);
-            } else {
-                echo json_encode($result[0]); // Devolver solo el primer resultado para una ID específica
+        sendJsonResponse(true, $result);
+    }
+    
+    // POST - Crear o actualizar licencia
+    else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Verificar si se recibieron los datos JSON
+        if (!isset($_POST['datos'])) {
+            throw new Exception('No se recibieron los datos de la licencia');
+        }
+
+        $datos = json_decode($_POST['datos'], true);
+        if (!$datos) {
+            throw new Exception('Error al decodificar los datos JSON');
+        }
+
+        // Procesar el archivo PDF si existe
+        if (isset($_FILES['archivo_pdf']) && $_FILES['archivo_pdf']['error'] === UPLOAD_ERR_OK) {
+            $archivo = $_FILES['archivo_pdf'];
+            
+            // Validar tipo de archivo
+            $tipo = mime_content_type($archivo['tmp_name']);
+            if ($tipo !== 'application/pdf') {
+                throw new Exception('Solo se permiten archivos PDF');
             }
-        } else {
-            echo json_encode($result); // Devolver todos los resultados
-        }
-        break;
 
-    case 'POST':
-        // Create new license
-        if ($licencia->create($input)) {
-            http_response_code(201);
-            echo json_encode(['success' => true]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Error al crear la licencia']);
-        }
-        break;
+            // Validar tamaño (5MB máximo)
+            if ($archivo['size'] > 5 * 1024 * 1024) {
+                throw new Exception('El archivo no debe superar los 5MB');
+            }
 
-    case 'PUT':
-        // Update existing license
-        $id = isset($_GET['id']) ? $_GET['id'] : (isset($input['id']) ? $input['id'] : null);
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['error' => 'ID no proporcionado']);
-            break;
-        }
-        if ($licencia->update($id, $input)) {
-            echo json_encode(['success' => true]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Error al actualizar la licencia']);
-        }
-        break;
+            // Crear directorio si no existe
+            $directorio = '../upload/archivos/';
+            if (!file_exists($directorio)) {
+                mkdir($directorio, 0777, true);
+            }
 
-    case 'DELETE':
-        // Delete license
+            // Generar nombre único para el archivo
+            $extension = pathinfo($archivo['name'], PATHINFO_EXTENSION);
+            $nombreArchivo = uniqid() . '_' . time() . '.' . $extension;
+            $rutaArchivo = $directorio . $nombreArchivo;
+
+            // Mover el archivo
+            if (!move_uploaded_file($archivo['tmp_name'], $rutaArchivo)) {
+                throw new Exception('Error al guardar el archivo');
+            }
+
+            $datos['archivo_pdf'] = $nombreArchivo;
+        }
+
+        // Crear o actualizar la licencia
+        $id = isset($datos['id']) ? $datos['id'] : null;
+        if ($id) {
+            // Si es actualización, obtener datos anteriores
+            $licenciaAnterior = $licencia->read($id)[0];
+            
+            // Si hay un archivo nuevo y existe uno anterior, eliminar el anterior
+            if (isset($datos['archivo_pdf']) && !empty($licenciaAnterior['archivo_pdf'])) {
+                $rutaAnterior = '../upload/archivos/' . $licenciaAnterior['archivo_pdf'];
+                if (file_exists($rutaAnterior)) {
+                    unlink($rutaAnterior);
+                }
+            }
+            
+            // Si no se subió un archivo nuevo, mantener el anterior
+            if (!isset($datos['archivo_pdf']) && isset($licenciaAnterior['archivo_pdf'])) {
+                $datos['archivo_pdf'] = $licenciaAnterior['archivo_pdf'];
+            }
+
+            $result = $licencia->update($id, $datos);
+        } else {
+            $result = $licencia->create($datos);
+        }
+
+        if ($result) {
+            sendJsonResponse(true, null, 'Licencia guardada exitosamente');
+        } else {
+            throw new Exception('Error al guardar la licencia');
+        }
+    }
+    
+    // DELETE - Eliminar licencia
+    else if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
         if (!$id) {
-            http_response_code(400);
-            echo json_encode(['error' => 'ID no proporcionado']);
-            break;
+            throw new Exception('ID no proporcionado');
         }
-        if ($licencia->delete($id)) {
-            echo json_encode(['success' => true]);
-        } else {
-            http_response_code(500);
-            echo json_encode(['error' => 'Error al eliminar la licencia']);
-        }
-        break;
 
-    default:
-        http_response_code(405);
-        echo json_encode(['error' => 'Método no permitido']);
-        break;
+        // Obtener información de la licencia antes de eliminarla
+        $licenciaInfo = $licencia->read($id)[0];
+        
+        // Eliminar el archivo si existe
+        if (!empty($licenciaInfo['archivo_pdf'])) {
+            $rutaArchivo = '../upload/archivos/' . $licenciaInfo['archivo_pdf'];
+            if (file_exists($rutaArchivo)) {
+                unlink($rutaArchivo);
+            }
+        }
+
+        if ($licencia->delete($id)) {
+            sendJsonResponse(true, null, 'Licencia eliminada exitosamente');
+        } else {
+            throw new Exception('Error al eliminar la licencia');
+        }
+    }
+    
+    else {
+        throw new Exception('Método no permitido');
+    }
+
+} catch (Exception $e) {
+    error_log("Error en licencias.php: " . $e->getMessage());
+    sendJsonResponse(false, null, $e->getMessage());
 } 

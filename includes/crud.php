@@ -39,15 +39,16 @@ class LicenciaMedica {
                 inst_salud_previsional,
                 nombre_medico,
                 rut_empleador,
-                razon_social
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                razon_social,
+                archivo_pdf
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new Exception("Error en la preparación de la consulta: " . $this->conn->error);
             }
 
-            $stmt->bind_param("ssssssssss",
+            $stmt->bind_param("sssssssssss",
                 $data['codigo_verificacion'],
                 $data['rut_paciente'],
                 $data['nombre_completo'],
@@ -57,7 +58,8 @@ class LicenciaMedica {
                 $data['inst_salud_previsional'],
                 $data['nombre_medico'],
                 $data['rut_empleador'],
-                $data['razon_social']
+                $data['razon_social'],
+                $data['archivo_pdf']
             );
 
             if (!$stmt->execute()) {
@@ -190,7 +192,8 @@ class LicenciaMedica {
                 inst_salud_previsional = ?,
                 nombre_medico = ?,
                 rut_empleador = ?,
-                razon_social = ?
+                razon_social = ?,
+                archivo_pdf = ?
                 WHERE id = ?";
 
             $stmt = $this->conn->prepare($sql);
@@ -198,7 +201,7 @@ class LicenciaMedica {
                 throw new Exception("Error en la preparación de la consulta: " . $this->conn->error);
             }
 
-            $stmt->bind_param("ssssssssssi",
+            $stmt->bind_param("sssssssssssi",
                 $data['codigo_verificacion'],
                 $data['rut_paciente'],
                 $data['nombre_completo'],
@@ -209,6 +212,7 @@ class LicenciaMedica {
                 $data['nombre_medico'],
                 $data['rut_empleador'],
                 $data['razon_social'],
+                $data['archivo_pdf'],
                 $id
             );
 

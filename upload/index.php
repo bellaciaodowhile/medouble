@@ -75,6 +75,7 @@ $licencias = $licencia->read();
             }
             .responsive-table {
                 display: block;
+                padding: 40px;
             }
             .responsive-table thead {
                 display: none;
@@ -182,9 +183,28 @@ $licencias = $licencia->read();
                             <tr class="tramitacion-content" id="tramitaciones-<?php echo $lic['id']; ?>">
                                 <td colspan="7">
                                     <div class="transition-all duration-300">
-                                        <script>
-                                            console.log(<?php echo json_encode($lic['tramitaciones']); ?>);
-                                        </script>
+                                        <?php if (!empty($lic['archivo_pdf'])): ?>
+                                            <div class="mb-4 p-4">
+                                                <h4 class="font-semibold text-gray-900 mb-3">Documento PDF</h4>
+                                                <div class="flex items-center space-x-4">
+                                                    <button onclick="openPdfPreview('view_pdf.php?file=<?php echo htmlspecialchars($lic['archivo_pdf']); ?>')" 
+                                                            class="bg-[#1DA9A3] text-white px-4 py-2 rounded-md hover:bg-[#178F89] transition-all duration-200 flex items-center space-x-2">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2-2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        <span>Ver PDF</span>
+                                                    </button>
+                                                    <a target="_blank" href="view_pdf.php?file=<?php echo htmlspecialchars($lic['archivo_pdf']); ?>"
+                                                        class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-all duration-200 flex items-center space-x-2">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        <span>Descargar</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
                                         <?php 
                                         $tramitaciones = $lic['tramitaciones'];
                                         if (!empty($tramitaciones)): 
@@ -308,6 +328,15 @@ $licencias = $licencia->read();
                                 <option value="Rechazada">Rechazada</option>
                             </select>
                         </div>
+                        <div class="form-group sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Archivo PDF</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="file" id="archivo_pdf" name="archivo_pdf" accept=".pdf"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1DA9A3] focus:border-transparent transition-all duration-200">
+                                <div id="archivo_actual" class="text-sm text-gray-500"></div>
+                            </div>
+                            <p class="mt-1 text-sm text-gray-500">Solo se permiten archivos PDF (máximo 5MB)</p>
+                        </div>
                     </div>
 
                     <!-- Sección de Tramitaciones -->
@@ -338,6 +367,23 @@ $licencias = $licencia->read();
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Preview Modal -->
+    <div id="pdfPreviewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-5xl shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Vista previa del documento</h3>
+                <button onclick="closePdfPreview()" class="text-gray-400 hover:text-gray-500 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="pdf-container h-[80vh] w-full bg-gray-100 rounded-lg overflow-hidden">
+                <iframe id="pdfViewer" src="" class="w-full h-full border-0" frameborder="0"></iframe>
             </div>
         </div>
     </div>
@@ -426,6 +472,7 @@ $licencias = $licencia->read();
             if (!edit) {
                 document.getElementById('licenciaForm').reset();
                 document.getElementById('tramitacionesContainer').innerHTML = '';
+                document.getElementById('archivo_actual').textContent = '';
                 agregarTramitacion();
             }
         }
@@ -449,7 +496,7 @@ $licencias = $licencia->read();
                         return;
                     }
                     
-                    const licencia = Array.isArray(data) ? data[0] : data;
+                    const licencia = data.data && data.data.length > 0 ? data.data[0] : null;
                     
                     if (!licencia) {
                         alert('No se encontró la licencia');
@@ -460,22 +507,36 @@ $licencias = $licencia->read();
                     document.getElementById('tramitacionesContainer').innerHTML = '';
 
                     // Llenar campos de la licencia
-                    document.getElementById('licenciaId').value = licencia.id;
-                    document.getElementById('codigo_verificacion').value = licencia.codigo_verificacion;
-                    document.getElementById('rut_paciente').value = licencia.rut_paciente;
-                    document.getElementById('nombre_completo').value = licencia.nombre_completo;
-                    document.getElementById('folio_licencia').value = licencia.folio_licencia;
-                    document.getElementById('lugar_otorgamiento').value = licencia.lugar_otorgamiento;
-                    document.getElementById('fecha_otorgamiento').value = licencia.fecha_otorgamiento;
-                    document.getElementById('inst_salud_previsional').value = licencia.inst_salud_previsional;
-                    document.getElementById('nombre_medico').value = licencia.nombre_medico;
-                    document.getElementById('rut_empleador').value = licencia.rut_empleador;
-                    document.getElementById('razon_social').value = licencia.razon_social;
+                    document.getElementById('licenciaId').value = licencia.id || '';
+                    document.getElementById('codigo_verificacion').value = licencia.codigo_verificacion || '';
+                    document.getElementById('rut_paciente').value = licencia.rut_paciente || '';
+                    document.getElementById('nombre_completo').value = licencia.nombre_completo || '';
+                    document.getElementById('folio_licencia').value = licencia.folio_licencia || '';
+                    document.getElementById('lugar_otorgamiento').value = licencia.lugar_otorgamiento || '';
+                    document.getElementById('fecha_otorgamiento').value = licencia.fecha_otorgamiento || '';
+                    document.getElementById('inst_salud_previsional').value = licencia.inst_salud_previsional || '';
+                    document.getElementById('nombre_medico').value = licencia.nombre_medico || '';
+                    document.getElementById('rut_empleador').value = licencia.rut_empleador || '';
+                    document.getElementById('razon_social').value = licencia.razon_social || '';
+
+                    // Mostrar nombre del archivo actual si existe
+                    const archivoActual = document.getElementById('archivo_actual');
+                    if (licencia.archivo_pdf) {
+                        archivoActual.textContent = `Archivo actual: ${licencia.archivo_pdf}`;
+                    } else {
+                        archivoActual.textContent = '';
+                    }
 
                     // Agregar tramitaciones existentes
                     if (licencia.tramitaciones && licencia.tramitaciones.length > 0) {
                         licencia.tramitaciones.forEach(tramitacion => {
-                            agregarTramitacion(tramitacion);
+                            if (tramitacion && typeof tramitacion === 'object') {
+                                agregarTramitacion({
+                                    fecha: tramitacion.fecha || '',
+                                    estado: tramitacion.estado || 'En Trámite',
+                                    entidad: tramitacion.entidad || ''
+                                });
+                            }
                         });
                     } else {
                         agregarTramitacion();
@@ -510,41 +571,62 @@ $licencias = $licencia->read();
             const formData = new FormData(this);
             const id = document.getElementById('licenciaId').value;
             
-            // Convertir FormData a objeto y reorganizar tramitaciones
-            const data = {};
+            // Validar el archivo PDF
+            const archivoPdf = document.getElementById('archivo_pdf').files[0];
+            if (archivoPdf) {
+                if (archivoPdf.type !== 'application/pdf') {
+                    alert('Solo se permiten archivos PDF');
+                    return;
+                }
+                if (archivoPdf.size > 5 * 1024 * 1024) { // 5MB
+                    alert('El archivo no debe superar los 5MB');
+                    return;
+                }
+            }
+
+            // Convertir FormData a objeto para los datos JSON
+            const jsonData = {};
             formData.forEach((value, key) => {
                 if (key.startsWith('tramitaciones[')) {
                     const matches = key.match(/tramitaciones\[(\d+)\]\[(\w+)\]/);
                     if (matches) {
                         const [, index, field] = matches;
-                        if (!data.tramitaciones) data.tramitaciones = [];
-                        if (!data.tramitaciones[index]) data.tramitaciones[index] = {};
-                        data.tramitaciones[index][field] = value;
+                        if (!jsonData.tramitaciones) jsonData.tramitaciones = [];
+                        if (!jsonData.tramitaciones[index]) jsonData.tramitaciones[index] = {};
+                        jsonData.tramitaciones[index][field] = value;
                     }
-                } else {
-                    data[key] = value;
+                } else if (key !== 'archivo_pdf') {
+                    jsonData[key] = value;
                 }
             });
 
             // Convertir tramitaciones de objeto a array
-            if (data.tramitaciones) {
-                data.tramitaciones = Object.values(data.tramitaciones);
+            if (jsonData.tramitaciones) {
+                jsonData.tramitaciones = Object.values(jsonData.tramitaciones);
+            }
+
+            // Crear un FormData para enviar tanto el JSON como el archivo
+            const sendFormData = new FormData();
+            sendFormData.append('datos', JSON.stringify(jsonData));
+            if (archivoPdf) {
+                sendFormData.append('archivo_pdf', archivoPdf);
             }
             
             fetch('../api/licencias.php', {
-                method: id ? 'PUT' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
+                method: id ? 'POST' : 'POST', // Siempre usar POST para FormData
+                body: sendFormData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert('Error al guardar la licencia');
+                    alert(data.message || 'Error al guardar la licencia');
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar la licencia');
             });
         });
 
@@ -559,6 +641,40 @@ $licencias = $licencia->read();
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeModal();
+            }
+        });
+
+        function openPdfPreview(pdfUrl) {
+            const modal = document.getElementById('pdfPreviewModal');
+            const viewer = document.getElementById('pdfViewer');
+            
+            viewer.src = pdfUrl;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePdfPreview() {
+            const modal = document.getElementById('pdfPreviewModal');
+            const viewer = document.getElementById('pdfViewer');
+            
+            modal.classList.add('hidden');
+            viewer.src = '';
+            
+            // Restaurar el scroll del body
+            document.body.style.overflow = 'auto';
+        }
+
+        // Cerrar el modal de PDF al hacer clic fuera de él
+        document.getElementById('pdfPreviewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePdfPreview();
+            }
+        });
+
+        // Agregar escape key listener para cerrar el modal de PDF
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePdfPreview();
             }
         });
     </script>

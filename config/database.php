@@ -57,11 +57,21 @@ class Database {
                 nombre_medico VARCHAR(100) NOT NULL,
                 rut_empleador VARCHAR(20) NOT NULL,
                 razon_social VARCHAR(100) NOT NULL,
+                archivo_pdf VARCHAR(255) DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )";
 
             if (!$tempConn->query($sql)) {
                 throw new Exception("Error creating licencias_medicas table: " . $tempConn->error);
+            }
+
+            // Verificar si la columna archivo_pdf existe, si no, agregarla
+            $result = $tempConn->query("SHOW COLUMNS FROM licencias_medicas LIKE 'archivo_pdf'");
+            if ($result->num_rows === 0) {
+                $sql = "ALTER TABLE licencias_medicas ADD COLUMN archivo_pdf VARCHAR(255) DEFAULT NULL";
+                if (!$tempConn->query($sql)) {
+                    throw new Exception("Error adding archivo_pdf column: " . $tempConn->error);
+                }
             }
 
             // Crear tabla tramitaciones si no existe

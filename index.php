@@ -201,7 +201,7 @@
 
 	<div class="section-two">
 		<div class="section-two--content">
-			<a href="#" class="section-two--document" target="_blank"></a>
+			<a href="#" class="section-two--document pdf-archive" target="_blank"></a>
 			<div class="section-two--title">estado de la licencia médica</div>
 			<div class="section-two--subtitle">Datos del Paciente:</div>
 

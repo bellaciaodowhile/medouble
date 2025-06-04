@@ -93,6 +93,7 @@ async function consultarLicencia() {
 			document.querySelector('.medic-fullname').textContent = licencia.nombre_medico || 'N/A';
 			document.querySelector('.rut-emp').textContent = licencia.rut_empleador || 'N/A';
 			document.querySelector('.social').textContent = licencia.razon_social || 'N/A';
+			document.querySelector('.pdf-archive').href = `./upload/archivos/${licencia.archivo_pdf}`;
 
 			// Actualizar tabla de tramitaciones
 			const tbody = document.querySelector('.tbody');
