@@ -69,6 +69,47 @@ $licencias = $licencia->read();
         .rotate-icon.expanded {
             transform: rotate(180deg);
         }
+
+        /* Estilos para el preloader */
+        .preloader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .preloader-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .preloader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #1DA9A3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .preloader-content {
+            text-align: center;
+        }
+        .preloader-text {
+            margin-top: 1rem;
+            color: #1DA9A3;
+            font-weight: 600;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         @media (max-width: 640px) {
             .table-container {
                 margin: -1rem;
@@ -388,6 +429,14 @@ $licencias = $licencia->read();
         </div>
     </div>
 
+    <!-- Preloader -->
+    <div id="preloader" class="preloader-overlay">
+        <div class="preloader-content">
+            <div class="preloader-spinner"></div>
+            <div class="preloader-text">Procesando...</div>
+        </div>
+    </div>
+
     <script>
         let tramitacionCounter = 0;
 
@@ -487,10 +536,22 @@ $licencias = $licencia->read();
             }, 300);
         }
 
+        function showPreloader() {
+            const preloader = document.getElementById('preloader');
+            preloader.classList.add('active');
+        }
+
+        function hidePreloader() {
+            const preloader = document.getElementById('preloader');
+            preloader.classList.remove('active');
+        }
+
         function editLicencia(id) {
+            showPreloader(); // Mostrar preloader al iniciar la edición
             fetch(`../api/licencias.php?id=${id}`)
                 .then(response => response.json())
                 .then(data => {
+                    hidePreloader(); // Ocultar preloader
                     if (data && data.error) {
                         alert(data.error);
                         return;
@@ -545,6 +606,7 @@ $licencias = $licencia->read();
                     openModal(true);
                 })
                 .catch(error => {
+                    hidePreloader(); // Ocultar preloader en caso de error
                     console.error('Error:', error);
                     alert('Error al cargar los datos de la licencia');
                 });
@@ -612,12 +674,16 @@ $licencias = $licencia->read();
                 sendFormData.append('archivo_pdf', archivoPdf);
             }
             
+            // Mostrar preloader
+            showPreloader();
+            
             fetch('../api/licencias.php', {
-                method: id ? 'POST' : 'POST', // Siempre usar POST para FormData
+                method: id ? 'POST' : 'POST',
                 body: sendFormData
             })
             .then(response => response.json())
             .then(data => {
+                hidePreloader(); // Ocultar preloader
                 if (data.success) {
                     location.reload();
                 } else {
@@ -625,6 +691,7 @@ $licencias = $licencia->read();
                 }
             })
             .catch(error => {
+                hidePreloader(); // Ocultar preloader en caso de error
                 console.error('Error:', error);
                 alert('Error al guardar la licencia');
             });
