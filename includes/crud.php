@@ -108,8 +108,9 @@ class LicenciaMedica {
                                 'id', t.id,
                                 'fecha', t.fecha,
                                 'estado', t.estado,
-                                'entidad', t.entidad
-                            )
+                                'entidad', t.entidad,
+                                'created_at', t.created_at
+                            ) ORDER BY t.id ASC
                         ), '[]') as tramitaciones
                         FROM {$this->table_name} l
                         LEFT JOIN tramitaciones t ON l.id = t.licencia_id
@@ -127,8 +128,9 @@ class LicenciaMedica {
                                 'id', t.id,
                                 'fecha', t.fecha,
                                 'estado', t.estado,
-                                'entidad', t.entidad
-                            )
+                                'entidad', t.entidad,
+                                'created_at', t.created_at
+                            ) ORDER BY t.id ASC
                         ), '[]') as tramitaciones
                         FROM {$this->table_name} l
                         LEFT JOIN tramitaciones t ON l.id = t.licencia_id

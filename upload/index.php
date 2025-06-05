@@ -253,18 +253,21 @@ $licencias = $licencia->read();
                                             <div class="space-y-4 p-4">
                                                 <h4 class="font-semibold text-gray-900 mb-3">Historial de Tramitaciones</h4>
                                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    <?php 
-                                                    foreach ($tramitaciones as $tramitacion): 
+                                                    <?php foreach ($tramitaciones as $tramitacion): 
                                                         if (!empty($tramitacion['fecha'])):
+                                                            $estado_class = 
+                                                                $tramitacion['estado'] === 'Otorgada' ? 'bg-green-100 text-green-800' : 
+                                                                ($tramitacion['estado'] === 'Rechazada' ? 'bg-red-100 text-red-800' : 
+                                                                ($tramitacion['estado'] === 'Pronunciada' ? 'bg-purple-100 text-purple-800' :
+                                                                ($tramitacion['estado'] === 'Tramitada' ? 'bg-blue-100 text-blue-800' : 
+                                                                'bg-yellow-100 text-yellow-800')));
                                                     ?>
                                                         <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                                                             <div class="flex justify-between items-start mb-2">
                                                                 <div class="text-sm font-medium text-gray-900">
                                                                     <?php echo date('d/m/Y', strtotime($tramitacion['fecha'])); ?>
                                                                 </div>
-                                                                <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                                                    <?php echo $tramitacion['estado'] === 'Aprobada' ? 'bg-green-100 text-green-800' : 
-                                                                    ($tramitacion['estado'] === 'Rechazada' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'); ?>">
+                                                                <span class="px-2 py-1 text-xs font-semibold rounded-full <?php echo $estado_class; ?>">
                                                                     <?php echo htmlspecialchars($tramitacion['estado']); ?>
                                                                 </span>
                                                             </div>
@@ -364,9 +367,11 @@ $licencias = $licencia->read();
                             <label class="block text-sm font-medium text-gray-700 mb-2">Estado de Tramitación</label>
                             <select id="estado_tramitacion" name="estado_tramitacion" 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1DA9A3] focus:border-transparent transition-all duration-200">
-                                <option value="En Trámite">En Trámite</option>
-                                <option value="Aprobada">Aprobada</option>
+                                <option value="Otorgada">Otorgada</option>
+                                <option value="Tramitada">Tramitada</option>
                                 <option value="Rechazada">Rechazada</option>
+                                <option value="En trámite">En trámite</option>
+                                <option value="Pronunciada">Pronunciada</option>
                             </select>
                         </div>
                         <div class="form-group sm:col-span-2">
@@ -487,9 +492,11 @@ $licencias = $licencia->read();
                             <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
                             <select name="tramitaciones[${tramitacionId}][estado]" 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1DA9A3] focus:border-transparent transition-all duration-200">
-                                <option value="En Trámite" ${data && data.estado === 'En Trámite' ? 'selected' : ''}>En Trámite</option>
-                                <option value="Aprobada" ${data && data.estado === 'Aprobada' ? 'selected' : ''}>Aprobada</option>
+                                <option value="Otorgada" ${data && data.estado === 'Otorgada' ? 'selected' : ''}>Otorgada</option>
+                                <option value="Tramitada" ${data && data.estado === 'Tramitada' ? 'selected' : ''}>Tramitada</option>
                                 <option value="Rechazada" ${data && data.estado === 'Rechazada' ? 'selected' : ''}>Rechazada</option>
+                                <option value="En trámite" ${data && data.estado === 'En trámite' ? 'selected' : ''}>En trámite</option>
+                                <option value="Pronunciada" ${data && data.estado === 'Pronunciada' ? 'selected' : ''}>Pronunciada</option>
                             </select>
                         </div>
                         <div class="form-group">

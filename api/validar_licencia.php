@@ -71,7 +71,7 @@ try {
                         'fecha', t.fecha,
                         'estado', t.estado,
                         'entidad', t.entidad
-                    )
+                    ) ORDER BY t.id ASC
                 ), '[]') as tramitaciones
                 FROM licencias_medicas l
                 LEFT JOIN tramitaciones t ON l.id = t.licencia_id
